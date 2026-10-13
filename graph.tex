@@ -1,3 +1,11 @@
+% --- obo2tex: required packages ---
+\providecommand{\oboneed}[2]{\ifdefined#1\else
+  \PackageError{obo2tex}{Missing package: #2}{Add \string\usepackage{#2} to your preamble.}\fi}
+\oboneed{\tikzset}{tikz}
+\oboneed{\foreach}{pgffor}
+\oboneed{\pgfmathsetlengthmacro}{pgfmath}
+\oboneed{\providecolor}{xcolor}
+
 % --- class hierarchy macros (redefine to restyle) ---
 \providecommand{\oboslot}{1.1em}      % width of the expand-triangle slot
 \providecommand{\oboicon}{0.9em}      % diameter of the class icon
@@ -41,8 +49,6 @@
     \pgfmathsetlengthmacro{\oboxl}{(#1+1)*\oboW}%
     \node[anchor=west,inner xsep=0.3em,inner ysep=0pt,font=\sffamily\small] at (\oboxl,0) {#4};
   \end{tikzpicture}}\vskip0pt}
-
-\section{http://www.co-ode.org/ontologies/pizza}
 
 \begingroup\offinterlineskip
 \oboclassrow{0}{}{1}{owl:Thing}

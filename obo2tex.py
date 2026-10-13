@@ -11,7 +11,8 @@ Usage:
     cat ontology.json | python obo2tex.py --standalone > main.tex
     cat ontology.json | python obo2tex.py --no-root > ontology.tex
 
-Fragment output needs \\usepackage{tikz} in the host document.
+Fragment output needs \\usepackage{tikz} in the host document; missing
+packages are reported with a LaTeX error.
 """
 import argparse
 import json
@@ -46,6 +47,15 @@ def is_subclass_pred(pred):
 def display_name(node):
     return node.get("lbl") or short_id(node["id"])
 
+
+GUARDS = r"""% --- obo2tex: required packages ---
+\providecommand{\oboneed}[2]{\ifdefined#1\else
+  \PackageError{obo2tex}{Missing package: #2}{Add \string\usepackage{#2} to your preamble.}\fi}
+\oboneed{\tikzset}{tikz}
+\oboneed{\foreach}{pgffor}
+\oboneed{\pgfmathsetlengthmacro}{pgfmath}
+\oboneed{\providecolor}{xcolor}
+"""
 
 MACROS = r"""% --- class hierarchy macros (redefine to restyle) ---
 \providecommand{\oboslot}{1.1em}      % width of the expand-triangle slot
@@ -107,12 +117,6 @@ class Graph:
                 self.children[e["obj"]].append(e["sub"])
                 self.has_parent.add(e["sub"])
 
-    def title(self):
-        for v in self.meta.get("basicPropertyValues", []):
-            if short_id(v.get("pred", "")) in ("title", "label") and "val" in v:
-                return v["val"]
-        return self.meta.get("lbl") or self.id
-
     def sorted_ids(self, ids):
         return sorted(set(ids), key=lambda i: display_name(self.classes[i]).lower())
 
@@ -158,7 +162,7 @@ def render_tree(g, nid, prefix, path, lines):
 
 
 def render_graph(g, with_root):
-    lines = [r"\section{%s}" % esc(g.title()), "", r"\begingroup\offinterlineskip"]
+    lines = [r"\begingroup\offinterlineskip"]
     roots = g.roots()
     if with_root:
         lines.append(row([], bool(roots), "owl:Thing"))
@@ -169,6 +173,13 @@ def render_graph(g, with_root):
         render_tree(g, r, p, frozenset(), lines)
     lines.append(r"\endgroup")
     return "\n".join(lines)
+
+
+STY_HEADER = r"""\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{obohierarchy}[2026/10/13 OBO class hierarchy macros]
+\RequirePackage{xcolor}
+\RequirePackage{tikz}
+"""
 
 
 PREAMBLE = r"""\documentclass{article}
@@ -183,18 +194,26 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--standalone", action="store_true",
                     help="wrap output in a complete compilable document")
+    ap.add_argument("--sty", action="store_true",
+                    help="print only the macros as obohierarchy.sty (reads no input)")
+    ap.add_argument("--no-macros", action="store_true",
+                    help="omit the macro block (use with \\usepackage{obohierarchy})")
     ap.add_argument("--no-root", action="store_true",
                     help="do not add an owl:Thing root above the top-level classes")
     args = ap.parse_args()
+
+    if args.sty:
+        sys.stdout.write(STY_HEADER + MACROS)
+        return
 
     try:
         data = json.load(sys.stdin)
     except json.JSONDecodeError as e:
         sys.exit("obo2tex: invalid JSON on stdin: %s" % e)
 
-    body = "\n\n".join(render_graph(Graph(g), not args.no_root)
+    body = "\n\n\\medskip\n\n".join(render_graph(Graph(g), not args.no_root)
                        for g in data.get("graphs", []))
-    out = MACROS + "\n" + body + "\n"
+    out = ("" if args.no_macros else GUARDS + "\n" + MACROS + "\n") + body + "\n"
     if args.standalone:
         out = PREAMBLE + "\n" + out + "\\end{document}\n"
     sys.stdout.write(out)
