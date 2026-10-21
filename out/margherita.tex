@@ -1,3 +1,9 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\begin{document}
+
 % --- obo2tex: required packages ---
 \providecommand{\oboneed}[2]{\ifdefined#1\else
   \PackageError{obo2tex}{Missing package: #2}{Add \string\usepackage{#2} to your preamble.}\fi}
@@ -51,7 +57,7 @@
   \end{tikzpicture}}\vskip0pt}
 
 \begingroup\offinterlineskip
-\oboclassrow{0}{}{1}{owl:Thing}
-\oboclassrow{1}{2}{0}{Margherita}
-\oboclassrow{1}{3}{0}{Mushroom}
+\oboclassrow{0}{}{0}{Margherita}
+\oboclassrow{0}{}{0}{Mushroom}
 \endgroup
+\end{document}

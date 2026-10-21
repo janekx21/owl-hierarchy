@@ -1,26 +1,21 @@
-# Settings shared by all jobs (each job can override anything)
+# Settings shared by all jobs (every job can override any of them).
+# See CONFIG.md for the full reference.
 defaults:
-  robot: ./robot              # path to the robot executable
-  python: python3
-  obo2tex: obo2tex.py
-  reasoner: elk               # elk (default) | hermit | jfact | whelk | emr | structural | none
+  robot_version: "1.9.11"     # downloaded once into the state folder
+  java_args: ["-Xmx4G"]       # JVM options
+  reasoner: elk               # elk | hermit | jfact | whelk | emr | structural | none
   select: "self parents"
-  stepwise: false             # true = one ROBOT call per step (intermediate files in /tmp)
-  env:                        # environment variables for the subprocesses
-    ROBOT_JAVA_ARGS: "-Xmx4G"
-  extra_args:                 # appended to the respective command
-    merge: []
-    reason: []
-    filter: []
-    convert: []
-    obo2tex: []
+  obo2tex:                    # flags for obo2tex.py
+    standalone: false
+    no_macros: false
+    no_root: false
 
 jobs:
   - name: american
-    input: ./pizza_fixed.ofn          # string or list of files
+    input: ./pizza_fixed.ofn
     filter_terms:
       - http://www.co-ode.org/ontologies/pizza/pizza.owl#American
-    output: graph.tex
+    output: out/graph.tex
 
   - name: margherita_hermit
     input:
@@ -31,14 +26,20 @@ jobs:
       - http://www.co-ode.org/ontologies/pizza/pizza.owl#Mushroom
     select: "self descendants"
     output: out/margherita.tex
+    obo2tex:
+      standalone: true        # complete compilable LaTeX document
+      no_root: true
     extra_args:
       filter: ["--preserve-structure", "false"]
-      obo2tex: []
-    # extra ROBOT steps injected between the built-in ones
-    steps:
+    steps:                    # extra ROBOT steps between the built-in ones
       after_merge:
         - "remove --select imports"
       after_reason:
         - ["relax"]
       after_filter:
         - "reduce --reasoner elk"
+
+  - name: sty                 # only writes the LaTeX macro package, no ROBOT run
+    output: out/obohierarchy.sty
+    obo2tex:
+      sty: true
