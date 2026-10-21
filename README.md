@@ -1,31 +1,61 @@
 # owl-hierarchy
 
-You will have to install "robot" the obo utility and python3.
-
-Build
-
-```
-make build
-```
-
-Then inside some latex document:
-
-```
-input{graph}
-```
+A utility to create .tex file from owl ontology with reasoning.
 
 <img width="164" height="151" alt="image" src="https://github.com/user-attachments/assets/b0db7877-52ba-4359-8070-2054b5f9cd29" />
 
+## Getting Started
 
+Prerequisites: (look at flake.nix)
 
-Robot command explained
-```bash
-./robot \
-  merge --input ./pizza_fixed.ofn \                                      # Load ontology
-  reason --reasoner elk \                                                # Materialize 
-  filter \
-    --term 'http://www.co-ode.org/ontologies/pizza/pizza.owl#American' \ # Filter for one term
-    --select "self parents" \                                            # Include the term and all parents
-  convert --output tmp.json && \                                         # Output as obo json
-cat tmp.json | python3 obo2tex.py | tee graph.tex                        # Create the latex out of that
+- python3
+- jdk
+
+```sh
+chmod +x ./run-pipeline.py
 ```
+
+### Config
+
+Take a look at [config.md](config.md) or the [example.config.yaml](example.config.yaml) on how to config.
+
+- Create a yaml config file
+
+### Run
+
+```sh
+./run-pipeline.py <you-config-file.yaml>
+```
+
+## Usage
+
+Then inside some latex document:
+
+```tex
+input{<your-output-name>}
+```
+
+## Example
+
+Create config.yaml
+```yaml
+jobs:
+  - name: american
+    input: ./pizza_fixed.ofn
+    filter_terms:
+      - http://www.co-ode.org/ontologies/pizza/pizza.owl#American
+    output: out/graph.tex
+```
+
+Run
+```sh
+./run-pipeline.py config.yaml
+```
+
+Add to tex file
+```tex
+input{out/graph}
+```
+
+Result
+<img width="164" height="151" alt="image" src="https://github.com/user-attachments/assets/b0db7877-52ba-4359-8070-2054b5f9cd29" />
